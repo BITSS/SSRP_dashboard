@@ -33,20 +33,31 @@ ui <- fluidPage(
 )
 
 
-claims_max <- df1 %>% select(contains("S2_4Q4_2P")) %>% names() %>% length()
-di_max <- df1 %>% select(contains("S2_4iP")) %>% names() %>% length()
-
-#loading the data
-df_spec <- read_csv("all_submitted_may_25_2021.csv") %>% 
+df <- read_csv("all_submitted_may_25_2021.csv") %>% 
     mutate(clean_doi = str_extract(
         S0_1Q1P1,
         regex("10\\.\\d{4,9}/[-._;()/:a-z0-9]+$",   #Explain regex
               ignore_case = T)
     )) %>%
+    mutate(
+        S0_1Q1P2 = ifelse(
+            test = (
+                S0_1Q1P2 == "[Fernando] Railroads of the Raj: Estimating the Impact of Transportation Infrastructure"
+            ),
+            yes = "Railroads of the Raj: Estimating the Impact of Transportation Infrastructure",
+            no = S0_1Q1P2
+        )
+    ) %>%  
     mutate(similar_title = phonetic(S0_1Q1P2)) %>% 
     group_by(email, clean_doi) %>%
     mutate(repro_id = cur_group_id()) %>%          #unique identifier for each repro
-    ungroup() %>%
+    ungroup() 
+
+claims_max <- df %>% select(contains("S2_4Q4_2P")) %>% names() %>% length()
+di_max <- df %>% select(contains("S2_4iP")) %>% names() %>% length()
+
+#loading the data
+df_spec <- df %>% 
     select(
         repro_id,
         clean_doi,
@@ -85,34 +96,88 @@ df_spec <- read_csv("all_submitted_may_25_2021.csv") %>%
         names_to = "spec", 
         values_to = "diname"    
     ) %>% 
+    mutate(spec = substring(spec, 8)) %>% 
     filter(!is.na(diname)) 
     
 
-df_di  <- read_csv("all_submitted_may_25_2021.csv") %>% 
+df_di  <- df %>%
     rename_at(.vars = paste0("S2_4Q4_2P", 1:di_max),
               .funs = ~ paste0("score_", 1:di_max)) %>% 
-    mutate(clean_doi = str_extract(
-        S0_1Q1P1,
-        regex("10\\.\\d{4,9}/[-._;()/:a-z0-9]+$",   #Explain regex
-              ignore_case = T)
-    )) %>%
-    mutate(similar_title = phonetic(S0_1Q1P2)) %>% 
-    group_by(email, clean_doi) %>%
-    mutate(repro_id = cur_group_id()) %>%
-    ungroup() %>% 
     rename_at(.vars = paste0("S2_4iP", 1:di_max),
               .funs = ~ paste0("diname_", 1:di_max)) %>% 
     select(repro_id, contains("diname_"), contains("score_") ) %>% 
     pivot_longer(#reshape to long
-        cols = !repro_id,   # do not modify: repro id, title id, title, claim summ
+        cols = !repro_id,   # do not modify: repro id
         names_to = c(".value", "id"),
         names_sep = "_" ) %>%  
     select(-id) %>% 
     filter(!is.na(diname)) 
 
 
-df_app <- left_join(df_spec, df_di, by = c("repro_id", "diname")) %>% filter(!is.na(score)) %>% arrange(similar_title, repro_id, claims)
-#
+df_app <- left_join(df_spec, df_di, 
+                    by = c("repro_id", "diname")) %>% 
+    filter(!is.na(score)) %>% 
+    arrange(similar_title, repro_id, claims)
+
+
+stat1 <- df_app %>% 
+    group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
+    summarize(claim_di_level = mean(score)) %>% 
+    ungroup(diname) %>% 
+    summarise(claim_level = mean(claim_di_level)) %>%  #repro-claim level (min? max? median?)
+    ungroup(claims) %>% 
+    summarize(repro_level = mean(claim_level)) %>% 
+    ungroup(repro_id) %>% 
+    summarise(paper_level = mean(repro_level)) #repro level 
+
+# distribution of scores of all display items
+df_app %>% 
+    group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
+    summarize(claim_di_level = mean(score)) %>% 
+    ggplot(aes(x = claim_di_level)) + 
+    geom_histogram(binwidth = 1) +
+    labs(title = "Distribution of Reproduction Scores: Display Items", 
+         x = "Reproducibility Score", 
+         y = "Count") 
+
+# distribution of scores of all claims
+df_app %>% 
+    group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
+    summarize(claim_di_level = mean(score)) %>% 
+    ungroup(diname) %>% 
+    summarise(claim_level = mean(claim_di_level)) %>% 
+    ggplot(aes(x = claim_level)) + 
+    geom_histogram(binwidth = 1) +
+    labs(title = "Distribution of Reproduction Scores: All Claims", 
+         x = "Reproducibility Score", 
+         y = "Count")
+
+
+df_titles <- df %>% select(similar_title, S0_1Q1P2) %>% group_by(similar_title) %>% 
+    slice(1)
+# Distribution of paper-level scores
+df_app %>% 
+    group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
+    summarize(claim_di_level = mean(score)) %>% 
+    ungroup(diname) %>% 
+    summarise(claim_level = mean(claim_di_level)) %>%  #repro-claim level (min? max? median?)
+    ungroup(claims) %>% 
+    summarize(repro_level = mean(claim_level)) %>% 
+    ungroup(repro_id) %>% 
+    summarise(paper_level = mean(repro_level), 
+              paper_level_sd = sd(repro_level), 
+              n_repros = n()) %>% 
+    left_join(df_titles, by = "similar_title") %>% group_by(similar_title) %>%
+    arrange(paper_level) %>%     #repro level 
+    ggplot(aes(x = paper_level)) + 
+    geom_histogram(binwidth = 1) +
+    labs(title = "Distribution of Reproduction Scores: Paper Level", 
+         x = "Reproducibility Score", 
+         y = "Count")
+
+
+df_app %>% group_by(similar_title) %>% summarise(num_di = length(unique(repro_id))) %>% View()
+
 
 if (FALSE) {
     group_by(repro_id) %>%
