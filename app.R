@@ -48,9 +48,9 @@ df <- read_csv("all_submitted_may_25_2021.csv") %>%
             no = S0_1Q1P2
         )
     ) %>%  
-    mutate(similar_title = phonetic(S0_1Q1P2)) %>% 
+    mutate(similar_title = phonetic(S0_1Q1P2)) %>%       #Assign common identifier to titles that sound similar to each other
     group_by(email, clean_doi) %>%
-    mutate(repro_id = cur_group_id()) %>%          #unique identifier for each repro
+    mutate(repro_id = cur_group_id()) %>%          #unique identifier for each repro (temp, as it assumes on repro paper paper and reproducer)
     ungroup() 
 
 claims_max <- df %>% select(contains("S2_4Q4_2P")) %>% names() %>% length()
@@ -64,13 +64,13 @@ df_spec <- df %>%
         similar_title,
         S0_1Q1P2,                       #title
         contains("S1_3Q1P"),            #claims summary
-        contains("S1_3Q5P1_r1c"), 
-        contains("S1_3Q5P2_r1c"),
+        contains("S1_3Q5P1_r1c"),       #Name of display items for claim 1
+        contains("S1_3Q5P2_r1c"),       #...
         contains("S1_3Q5P3_r1c"),
         contains("S1_3Q5P4_r1c"),
         contains("S1_3Q5P5_r1c"),
         contains("S1_3Q5P6_r1c"),
-        contains("S1_3Q5P7_r1c"),
+        contains("S1_3Q5P7_r1c"),       #Name of display items for last claim 
     ) %>% 
     rename_at(.vars = paste0("S1_3Q1P", 1:claims_max),
               .funs = ~ paste0("desc_", 1:claims_max)) %>% 
