@@ -5,24 +5,25 @@
 # Find out more about building applications with Shiny here:
 #
 #    http://shiny.rstudio.com/
-#
 
 library(shiny)
 library(tidyverse)
+library(stringdist)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
     # Application title
-    titlePanel("Barebones App"),
+    titlePanel("SSRP Dashboard"),
 
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
             selectInput("method", "Method:",
-                        c("Mean" = "mean_rl",
-                          "Max" = "max_rl",
-                          "Min" = "min_rl")),
+                        c("Mean" = "paper_level_mean_mean",
+                          "Median" = "paper_level_med_med", 
+                          "Max" = "paper_level_max_max",
+                          "Min" = "paper_level_min_min")),
         ),
 
         # Show a plot of the generated distribution
@@ -130,77 +131,90 @@ stat1 <- df_app %>%
     ungroup(repro_id) %>% 
     summarise(paper_level = mean(repro_level)) #repro level 
 
+
+if (FALSE){
 # distribution of scores of all display items
 df_app %>% 
     group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
     summarize(claim_di_level = mean(score)) %>% 
     ggplot(aes(x = claim_di_level)) + 
-    geom_histogram(binwidth = 1) +
+    geom_histogram(binwidth = 0.5) +
     labs(title = "Distribution of Reproduction Scores: Display Items", 
          x = "Reproducibility Score", 
          y = "Count") 
 
 # distribution of scores of all claims
-df_app %>% 
+df_claims <- df_app %>% 
     group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
     summarize(claim_di_level = mean(score)) %>% 
     ungroup(diname) %>% 
-    summarise(claim_level = mean(claim_di_level)) %>% 
+    summarise(claim_level = min(claim_di_level))
+n_claims <- dim(df_claims)[1]
+df_claims %>% 
     ggplot(aes(x = claim_level)) + 
-    geom_histogram(binwidth = 1) +
+    geom_histogram(binwidth = 0.5) +
     labs(title = "Distribution of Reproduction Scores: All Claims", 
          x = "Reproducibility Score", 
-         y = "Count")
-
-
-df_titles <- df %>% select(similar_title, S0_1Q1P2) %>% group_by(similar_title) %>% 
-    slice(1)
-# Distribution of paper-level scores
-df_app %>% 
-    group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
-    summarize(claim_di_level = mean(score)) %>% 
-    ungroup(diname) %>% 
-    summarise(claim_level = mean(claim_di_level)) %>%  #repro-claim level (min? max? median?)
-    ungroup(claims) %>% 
-    summarize(repro_level = mean(claim_level)) %>% 
-    ungroup(repro_id) %>% 
-    summarise(paper_level = mean(repro_level), 
-              paper_level_sd = sd(repro_level), 
-              n_repros = n()) %>% 
-    left_join(df_titles, by = "similar_title") %>% group_by(similar_title) %>%
-    arrange(paper_level) %>%     #repro level 
-    ggplot(aes(x = paper_level)) + 
-    geom_histogram(binwidth = 1) +
-    labs(title = "Distribution of Reproduction Scores: Paper Level", 
-         x = "Reproducibility Score", 
-         y = "Count")
-
-
-df_app %>% group_by(similar_title) %>% summarise(num_di = length(unique(repro_id))) %>% View()
-
-
-if (FALSE) {
-    group_by(repro_id) %>%
-        mutate(
-            mean_rl = mean(rep_level),
-            max_rl = max(rep_level),
-            min_rl = min(rep_level)
-        ) %>% 
-        arrange(similar_title, repro_id) %>% 
-        select(similar_title, S1_3Q1P1) 
+         y = "Count") +
+    annotate(
+        "text",
+        x = 1.7 * min(df_claims$claim_level) ,
+        y = 15,
+        label = paste0("Total Claims: ", n_claims),
+        size = 5
+    ) 
 }
 
+# data with one title per paper
+df_titles <- df %>% select(similar_title, S0_1Q1P2) %>% group_by(similar_title) %>% 
+    slice(1)
 
+# Distribution of paper-level scores
+df_app1 <- df_app %>% 
+    group_by(similar_title, repro_id, claims, diname) %>%      #agg at repro-claim-di level (min? max? median? it should not matter)
+    summarize(claim_di_level = mean(score)) %>% 
+    ungroup(diname) %>% 
+    summarise(claim_level_min = min(claim_di_level), 
+              claim_level_max = max(claim_di_level), 
+              claim_level_median = median(claim_di_level), 
+              claim_level_mean = mean(claim_di_level)) %>%     #repro-claim level (min? max? median? across DIs)
+    ungroup(claims) %>% 
+    summarize(repro_level_min_min = min(claim_level_min),
+              repro_level_max_max = max(claim_level_max),
+              repro_level_med_med = median(claim_level_median),
+              repro_level_mean_mean = mean(claim_level_mean),
+              n_claims = n()) %>%   #repro-paper level (min? max? median? across claims)
+    ungroup(repro_id) %>% 
+    summarise(paper_level_min_min = mean(repro_level_min_min), 
+              paper_level_max_max = mean(repro_level_max_max), 
+              paper_level_med_med = mean(repro_level_med_med), 
+              paper_level_mean_mean = mean(repro_level_mean_mean), 
+              paper_level_sd = sd(repro_level_mean_mean), 
+              n_repros = n(), 
+              mean_n_claims = mean(n_claims)) %>% 
+    left_join(df_titles, by = "similar_title") %>% group_by(similar_title) %>%
+    arrange(paper_level_mean_mean) 
+
+
+#df_app %>% group_by(similar_title) %>% summarise(num_di = length(unique(repro_id))) %>% View()
+
+
+#add color to bars                          DONE 
+#add 1:10 legend                            DONE
+#look for other simple stats in widgets         
+#add table to show the team 
+#post app 
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
     output$distPlot <- renderPlot({
-            ggplot(df1, aes(x = get(input$method)
-                            )) + 
-            geom_histogram(binwidth = 1) +
-            labs(title = "Distribution of All Reproduction Scores", 
+        df_app1 %>% ggplot(aes(x =  get(input$method))) + 
+            geom_histogram(binwidth = 1, color="black", fill="gray") +
+            labs(title = "Distribution of Reproduction Scores: Paper Level", 
                  x = "Reproducibility Score", 
-                 y = "Count") 
+                 y = "Count") +
+            coord_cartesian(ylim =  c( 0, 5 )) +
+            scale_x_continuous(breaks=1:10)
     })
 }
 
