@@ -99,7 +99,7 @@ df_spec <- df %>%
     ) %>% 
     mutate(spec = substring(spec, 8)) %>% 
     filter(!is.na(diname)) 
-    
+
 
 df_di  <- df %>%
     rename_at(.vars = paste0("S2_4Q4_2P", 1:di_max),
@@ -133,40 +133,42 @@ stat1 <- df_app %>%
 
 
 if (FALSE){
-# distribution of scores of all display items
-df_app %>% 
-    group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
-    summarize(claim_di_level = mean(score)) %>% 
-    ggplot(aes(x = claim_di_level)) + 
-    geom_histogram(binwidth = 0.5) +
-    labs(title = "Distribution of Reproduction Scores: Display Items", 
-         x = "Reproducibility Score", 
-         y = "Count") 
-
-# distribution of scores of all claims
-df_claims <- df_app %>% 
-    group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
-    summarize(claim_di_level = mean(score)) %>% 
-    ungroup(diname) %>% 
-    summarise(claim_level = min(claim_di_level))
-n_claims <- dim(df_claims)[1]
-df_claims %>% 
-    ggplot(aes(x = claim_level)) + 
-    geom_histogram(binwidth = 0.5) +
-    labs(title = "Distribution of Reproduction Scores: All Claims", 
-         x = "Reproducibility Score", 
-         y = "Count") +
-    annotate(
-        "text",
-        x = 1.7 * min(df_claims$claim_level) ,
-        y = 15,
-        label = paste0("Total Claims: ", n_claims),
-        size = 5
-    ) 
+    # distribution of scores of all display items
+    df_app %>% 
+        group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
+        summarize(claim_di_level = mean(score)) %>% 
+        ggplot(aes(x = claim_di_level)) + 
+        geom_histogram(binwidth = 0.5) +
+        labs(title = "Distribution of Reproduction Scores: Display Items", 
+             x = "Reproducibility Score", 
+             y = "Count") 
+    
+    # distribution of scores of all claims
+    df_claims <- df_app %>% 
+        group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
+        summarize(claim_di_level = mean(score)) %>% 
+        ungroup(diname) %>% 
+        summarise(claim_level = min(claim_di_level))
+    n_claims <- dim(df_claims)[1]
+    df_claims %>% 
+        ggplot(aes(x = claim_level)) + 
+        geom_histogram(binwidth = 0.5) +
+        labs(title = "Distribution of Reproduction Scores: All Claims", 
+             x = "Reproducibility Score", 
+             y = "Count") +
+        annotate(
+            "text",
+            x = 1.7 * min(df_claims$claim_level) ,
+            y = 15,
+            label = paste0("Total Claims: ", n_claims),
+            size = 5
+        ) 
 }
 
 # data with one title per paper
-df_titles <- df %>% select(similar_title, S0_1Q1P2) %>% group_by(similar_title) %>% 
+df_titles <- df %>% 
+    select(similar_title, S0_1Q1P2) %>% 
+    group_by(similar_title) %>% 
     slice(1)
 
 # Distribution of paper-level scores
@@ -202,8 +204,8 @@ df_app1 <- df_app %>%
 #add color to bars                          DONE 
 #add 1:10 legend                            DONE
 #look for other simple stats in widgets         
-#add table to show the team 
-#post app 
+#add table to show the team                 
+#post app                                   DONE
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
@@ -222,3 +224,119 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 
 
+
+
+library(shinydashboard)
+
+ui=fluidPage(
+    box(title = "Informed Investor", 
+        status = "primary", 
+        solidHeader = TRUE,
+        width = 6,
+        selectInput("informedDset", label="Select Category",
+                    choices = list("Sepal.Length"="Sepal.Length",
+                                   "Sepal.Width"="Sepal.Width",
+                                   "Petal.Length"="Petal.Length",
+                                   "Petal.Width"="Petal.Width",
+                                   "Species"="Species"), selected = "Sepal.Length")),
+    
+    box(
+        title = "Data Table", 
+        status = "warning", 
+        solidHeader = TRUE,
+        width = 6,
+        height = 142,
+        verbatimTextOutput("summaryDset")))
+
+
+server = function (input,output){
+    output$summaryDset <- renderPrint({
+        knitr::kable(format = "html", length(unique(iris[[input$informedDset]]) )) %>% 
+            kable_styling("striped", full_width = F)
+    })}
+
+shinyApp(ui, server)
+
+
+
+
+library(shiny)
+
+ui <- fluidPage(
+    
+    # Application title
+    titlePanel("mtcars"),
+    
+    sidebarLayout(
+        sidebarPanel(
+            sliderInput("mpg", "mpg Limit",
+                        min = 11, max = 33, value = 20)
+        ),
+        
+        mainPanel(
+            tableOutput("mtcars_kable")
+        )
+    )
+)
+
+server <- function(input, output) {
+    library(dplyr)
+    library(kableExtra)
+    output$mtcars_kable <- function() {
+        req(input$mpg)
+        mtcars %>%
+            mutate(car = rownames(.)) %>%
+            select(car, everything()) %>%
+            filter(mpg <= input$mpg) %>%
+            knitr::kable("html") %>%
+            kable_styling("striped", full_width = F) %>%
+            add_header_above(c(" ", "Group 1" = 5, "Group 2" = 6))
+    }
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+
+
+
+## Only run this example in interactive R sessions
+if (interactive()) {
+    # table example
+    shinyApp(
+        ui = fluidPage(
+            fluidRow(
+                column(12,
+                       tableOutput('table')
+                )
+            )
+        ),
+        server = function(input, output) {
+            output$table <- renderTable(iris)
+        }
+    )
+    
+    
+    # DataTables example
+    shinyApp(
+        ui = fluidPage(
+            fluidRow(
+                column(12,
+                       dataTableOutput('table')
+                )
+            )
+        ),
+        server = function(input, output) {
+            output$table <- renderDataTable(iris)
+        }
+    )
+}
+
+
+
+
+library(gtsummary)
+# make dataset with a few variables to summarize
+trial2 <- trial %>% select(age, grade, response, trt)
+
+# summarize the data with our package
+table1 <- tbl_summary(trial2)

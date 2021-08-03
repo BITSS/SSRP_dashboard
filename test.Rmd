@@ -1,0 +1,99 @@
+---
+title: "Reproducibility Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(stringdist)       
+library(readr)
+library(viridisLite)
+library(highcharter)
+library(plotly)
+
+df_app <- read_csv("test.csv")
+```
+
+
+Column 
+------------------------------------------------------------------------
+### Reproductions
+
+```{r asd}
+reproductions <- length(unique(df_app$repro_id))
+valueBox(reproductions, icon = "fa-pencil")
+```
+
+### Papers
+
+```{r asd1}
+papers <-  length(unique(df_app$similar_title))
+valueBox(papers, icon = "fa-file")
+```
+
+
+
+Row {data-height=500}
+-----------------------------------------------------------------------
+
+### 
+
+```{r}
+# - aggregate all obs at the claim-di level
+# - aggregate at the claim level by taking the average of display item (one per di)
+# - aggregate at the reproduction level by taking the average of claims (one per claim)
+# - aggregate at the paper level by taking the average of reproduction (one per repro)
+
+
+stat1 <- df_app %>% 
+    group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
+    summarize(claim_di_level = mean(score)) %>% 
+    ungroup(diname) %>% 
+    summarise(claim_level = mean(claim_di_level)) %>%  #repro-claim level (min? max? median?)
+    ungroup(claims) %>% 
+    summarize(repro_level = mean(claim_level)) %>% 
+    ungroup(repro_id) %>% 
+    summarise(paper_level = mean(repro_level))        #repro level 
+
+
+
+stat1 %>% ggplot(aes(x = paper_level)) +
+  geom_histogram(binwidth = 1,
+                 color = "black",
+                 fill = "gray") +
+  labs(title = "Distribution of Reproduction Scores: Paper Level",
+       x = "Reproducibility Score",
+       y = "Count") +
+  coord_cartesian(ylim =  c(0, 5)) +
+  scale_x_continuous(breaks = 1:10)
+```
+
+### Description
+
+Since its launch, in August 2021, the Social Science Reproduciton Platform (SSRP) has help 
+XXXX students and researchers around the world record the result of their reproductions in a standardized way. 
+As part of their exercise, this reproducers have assessed a total of XXXX papers, and a total of YYYYY claims. This reproductions have also generate XXXXX improvements and YYYYY new robustness tests.  
+
+
+
+Row {data-height=500}
+-----------------------------------------------------------------------
+
+### Reproducers Around the World 
+
+
+
+```{r,   fig_width = 10, fig_height = 3.8, fig_retina = 2}
+library(rnaturalearth)
+library(rgeos)
+world <- ne_countries(returnclass = "sf")
+#> [1] "sf"    "data.frame"
+plot_ly(world, color = I("gray90"), stroke = I("black"), span = I(1))
+```
