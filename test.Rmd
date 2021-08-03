@@ -77,7 +77,7 @@ stat1 %>% ggplot(aes(x = paper_level)) +
 
 ### Description
 
-Since its launch, in August 2021, the Social Science Reproduciton Platform (SSRP) has help 
+Since its launch, in August 2021, the Social Science Reproduction Platform (SSRP) has help 
 XXXX students and researchers around the world record the result of their reproductions in a standardized way. 
 As part of their exercise, this reproducers have assessed a total of XXXX papers, and a total of YYYYY claims. This reproductions have also generate XXXXX improvements and YYYYY new robustness tests.  
 
