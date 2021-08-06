@@ -102,9 +102,7 @@ testdata <- data.frame(admin = world$admin,
                                           5, # 5 US reproductions
                                           rep(0,8)))
 
-plot_ly(world,type = 'choropleth', locations = world$adm0_a3) %>%
-  add_trace(z = testdata$nreproductions,
-            color = I("gray90"), stroke = I("black"),
-            span = I(1))
-        #color = testdata$nreproductions, colors = 'Blues')
+plot_ly(world,type = 'choropleth', locations = world$adm0_a3,
+        color = I("gray90"), stroke = I("black"), span = I(1)) %>%
+  add_trace(z = testdata$nreproductions, colorscale="YlGnBu", reversescale=T)
 ```
