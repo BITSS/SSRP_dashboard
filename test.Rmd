@@ -95,5 +95,16 @@ library(rnaturalearth)
 library(rgeos)
 world <- ne_countries(returnclass = "sf")
 #> [1] "sf"    "data.frame"
-plot_ly(world, color = I("gray90"), stroke = I("black"), span = I(1))
+testdata <- data.frame(admin = world$admin,
+                       nreproductions = c(rep(0,29),
+                                          2, # 2 Chile reproductions
+                                          rep(0,138),
+                                          5, # 5 US reproductions
+                                          rep(0,8)))
+
+plot_ly(world,type = 'choropleth', locations = world$adm0_a3) %>%
+  add_trace(z = testdata$nreproductions,
+            color = I("gray90"), stroke = I("black"),
+            span = I(1))
+        #color = testdata$nreproductions, colors = 'Blues')
 ```
