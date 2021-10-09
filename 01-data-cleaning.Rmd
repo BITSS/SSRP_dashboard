@@ -24,14 +24,14 @@ library(stringdist)
 
 
 
-```{rm 01-basic}
+```{r 01-basic}
 # load data
 # clean some DOIs
 # rename the title of a reproduction
 # generate a variable that takes the same value for titles that sound similar
 # generate unique identifier for each reproduction
 
-df <- read_csv("all_submitted_may_25_2021.csv") %>%
+df <- read_csv("all_reproductions_aug_15_2021.csv") %>%
     mutate(clean_doi = str_extract(
         S0_1Q1P1,
         regex("10\\.\\d{4,9}/[-._;()/:a-z0-9]+$",   #Explain regex
@@ -46,19 +46,16 @@ df <- read_csv("all_submitted_may_25_2021.csv") %>%
             no = S0_1Q1P2
         )
     ) %>%
-    mutate(similar_title = phonetic(S0_1Q1P2)) %>%   #Assign common identifier to titles that sound similar to each other
-    group_by(email, clean_doi) %>%
-    mutate(repro_id = cur_group_id()) %>%          #unique identifier for each repro (temp, as it assumes on repro paper paper and reproducer)
-    ungroup()
+    mutate(similar_title = phonetic(S0_1Q1P2)) 
 
-claims_max <- df %>% select(contains("S2_4Q4_2P")) %>% names() %>% length()
-di_max <- df %>% select(contains("S2_4iP")) %>% names() %>% length()
+claims_max <- df %>% select(contains("S1_3Q1C")) %>% names() %>% length()
+di_max <- df %>% select(contains("S2_4iD")) %>% names() %>% length()
 
 ```
 
 
 ### Second: build specification data in long format 
-- Select repro_id, clean_doi, title identifier, original title, summary of each claim and names of display items for each claim
+- Select reproduction_id, clean_doi, title identifier, original title, summary of each claim and names of display items for each claim
 - rename summary and DI names to be more self-explanatory and in preparation for reshape
 - reshape from wide to long
 - remove the prefix of the spec variable
@@ -67,45 +64,47 @@ di_max <- df %>% select(contains("S2_4iP")) %>% names() %>% length()
 ```{r 02-spec}
 
 #loading the data
-df_spec <- df %>% 
+df_spec <- df %>% filter(status == "submitted" | status == "abandoned") %>%
     select(
-        repro_id,
+        country_code,
+        reproduction_id,
         clean_doi,
         similar_title,
         S0_1Q1P2,                       #title
-        contains("S1_3Q1P"),            #claims summary
-        contains("S1_3Q5P1_r1c"),       #Name of display items for claim 1
-        contains("S1_3Q5P2_r1c"),       #...
-        contains("S1_3Q5P3_r1c"),
-        contains("S1_3Q5P4_r1c"),
-        contains("S1_3Q5P5_r1c"),
-        contains("S1_3Q5P6_r1c"),
-        contains("S1_3Q5P7_r1c"),       #Name of display items for last claim 
+        contains("S1_3Q1C"),            #claims summary
+        contains("S1_3Q5C1_r1c"),       #Name of display items for claim 1
+        contains("S1_3Q5C2_r1c"),       #...
+        contains("S1_3Q5C3_r1c"),
+        contains("S1_3Q5C4_r1c"),
+        contains("S1_3Q5C5_r1c"),
+        contains("S1_3Q5C6_r1c"),
+        contains("S1_3Q5C7_r1c")       #Name of display items for last claim 
     ) %>% 
-    rename_at(.vars = paste0("S1_3Q1P", 1:claims_max),
+  select(!( ends_with(c("c7", "c8", "c9") , ignore.case = FALSE) )) %>% 
+    rename_at(.vars = paste0("S1_3Q1C", 1:claims_max),
               .funs = ~ paste0("desc_", 1:claims_max)) %>% 
-    rename_at(.vars = paste0("S1_3Q5P", 1:claims_max, "_r1c1"),
+    rename_at(.vars = paste0("S1_3Q5C", 1:claims_max, "_r1c1"),
               .funs = ~ paste0("diname.main_", 1:claims_max)) %>% 
-    rename_at(.vars = paste0("S1_3Q5P", 1:claims_max, "_r1c2"),
+    rename_at(.vars = paste0("S1_3Q5C", 1:claims_max, "_r1c2"),
               .funs = ~ paste0("diname.altspec1_", 1:claims_max)) %>% 
-    rename_at(.vars = paste0("S1_3Q5P", 1:claims_max, "_r1c3"),
+    rename_at(.vars = paste0("S1_3Q5C", 1:claims_max, "_r1c3"),
               .funs = ~ paste0("diname.altspec2_", 1:claims_max)) %>% 
-    rename_at(.vars = paste0("S1_3Q5P", 1:claims_max, "_r1c4"),
+    rename_at(.vars = paste0("S1_3Q5C", 1:claims_max, "_r1c4"),
               .funs = ~ paste0("diname.altspec3_", 1:claims_max)) %>% 
-    rename_at(.vars = paste0("S1_3Q5P", 1:claims_max, "_r1c5"),
+    rename_at(.vars = paste0("S1_3Q5C", 1:claims_max, "_r1c5"),
               .funs = ~ paste0("diname.altspec4_", 1:claims_max)) %>% 
-    rename_at(.vars = paste0("S1_3Q5P", 1:claims_max, "_r1c6"),
+    rename_at(.vars = paste0("S1_3Q5C", 1:claims_max, "_r1c6"),
               .funs = ~ paste0("diname.altspec5_", 1:claims_max)) %>% 
     pivot_longer(
         #reshape to long
-        cols = !c(repro_id, clean_doi, similar_title, S0_1Q1P2),
+        cols = !c(reproduction_id, clean_doi, similar_title, S0_1Q1P2, country_code),
         # do not modify: repro id, title id, title, claim summ
         names_to = c(".value", "claims"),
         names_sep = "_"
     ) %>% 
     filter(!is.na(desc)) %>% 
     pivot_longer(
-        cols = !c(repro_id, clean_doi, similar_title, S0_1Q1P2, claims, desc),
+        cols = !c(reproduction_id, clean_doi, similar_title, S0_1Q1P2, claims, desc, country_code),
         names_to = "spec", 
         values_to = "diname"    
     ) %>% 
@@ -123,13 +122,13 @@ df_spec <- df %>%
 
 ```{r 03-di-merge}
 df_di  <- df %>%
-    rename_at(.vars = paste0("S2_4Q4_2P", 1:di_max),
+    rename_at(.vars = paste0("S2_4Q4_2D", 1:di_max),
               .funs = ~ paste0("score_", 1:di_max)) %>% 
-    rename_at(.vars = paste0("S2_4iP", 1:di_max),
+    rename_at(.vars = paste0("S2_4iD", 1:di_max),
               .funs = ~ paste0("diname_", 1:di_max)) %>% 
-    select(repro_id, contains("diname_"), contains("score_") ) %>% 
+    select(reproduction_id, contains("diname_"), contains("score_") ) %>% 
     pivot_longer(#reshape to long
-        cols = !repro_id,   # do not modify: repro id
+        cols = !reproduction_id,   # do not modify: repro id
         names_to = c(".value", "id"),
         names_sep = "_" ) %>%  
     select(-id) %>% 
@@ -137,9 +136,9 @@ df_di  <- df %>%
 
 
 df_app <- left_join(df_spec, df_di, 
-                    by = c("repro_id", "diname")) %>% 
+                    by = c("reproduction_id", "diname")) %>% 
     filter(!is.na(score)) %>% 
-    arrange(similar_title, repro_id, claims)
+    arrange(similar_title, reproduction_id, claims)
 
 ```
 
@@ -163,7 +162,7 @@ stat1 %>% ggplot(aes(x = paper_level)) +
 if (FALSE){
     # distribution of scores of all display items
     df_app %>% 
-        group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
+        group_by(similar_title, reproduction_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
         summarize(claim_di_level = mean(score)) %>% 
         ggplot(aes(x = claim_di_level)) + 
         geom_histogram(binwidth = 0.5) +
@@ -173,7 +172,7 @@ if (FALSE){
     
     # distribution of scores of all claims
     df_claims <- df_app %>% 
-        group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
+        group_by(similar_title, reproduction_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
         summarize(claim_di_level = mean(score)) %>% 
         ungroup(diname) %>% 
         summarise(claim_level = min(claim_di_level))
@@ -201,7 +200,7 @@ df_titles <- df %>%
 
 # Distribution of paper-level scores
 df_app1 <- df_app %>% 
-    group_by(similar_title, repro_id, claims, diname) %>%      #agg at repro-claim-di level (min? max? median? it should not matter)
+    group_by(similar_title, reproduction_id, claims, diname) %>%      #agg at repro-claim-di level (min? max? median? it should not matter)
     summarize(claim_di_level = mean(score)) %>% 
     ungroup(diname) %>% 
     summarise(claim_level_min = min(claim_di_level), 
@@ -214,7 +213,7 @@ df_app1 <- df_app %>%
               repro_level_med_med = median(claim_level_median),
               repro_level_mean_mean = mean(claim_level_mean),
               n_claims = n()) %>%   #repro-paper level (min? max? median? across claims)
-    ungroup(repro_id) %>% 
+    ungroup(reproduction_id) %>% 
     summarise(paper_level_min_min = mean(repro_level_min_min), 
               paper_level_max_max = mean(repro_level_max_max), 
               paper_level_med_med = mean(repro_level_med_med), 

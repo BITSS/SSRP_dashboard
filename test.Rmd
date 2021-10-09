@@ -21,13 +21,12 @@ library(plotly)
 df_app <- read_csv("test.csv")
 ```
 
+## Column
 
-Column 
-------------------------------------------------------------------------
 ### Reproductions
 
 ```{r asd}
-reproductions <- length(unique(df_app$repro_id))
+reproductions <- length(unique(df_app$reproduction_id))
 valueBox(reproductions, icon = "fa-pencil")
 ```
 
@@ -36,34 +35,27 @@ valueBox(reproductions, icon = "fa-pencil")
 ```{r asd1}
 papers <-  length(unique(df_app$similar_title))
 valueBox(papers, icon = "fa-file")
+
+claims <- df_app %>% mutate("claim_id" = paste0(similar_title, claims)) %>% summarise( length( unique(claim_id)) ) %>% as.numeric()
 ```
 
+## Row {data-height="500"}
 
-
-Row {data-height=500}
------------------------------------------------------------------------
-
-### 
-
+### Levels of Reproducibility
 ```{r}
 # - aggregate all obs at the claim-di level
 # - aggregate at the claim level by taking the average of display item (one per di)
 # - aggregate at the reproduction level by taking the average of claims (one per claim)
 # - aggregate at the paper level by taking the average of reproduction (one per repro)
-
-
 stat1 <- df_app %>% 
-    group_by(similar_title, repro_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
+    group_by(similar_title, reproduction_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
     summarize(claim_di_level = mean(score)) %>% 
     ungroup(diname) %>% 
     summarise(claim_level = mean(claim_di_level)) %>%  #repro-claim level (min? max? median?)
     ungroup(claims) %>% 
     summarize(repro_level = mean(claim_level)) %>% 
-    ungroup(repro_id) %>% 
+    ungroup(reproduction_id) %>% 
     summarise(paper_level = mean(repro_level))        #repro level 
-
-
-
 stat1 %>% ggplot(aes(x = paper_level)) +
   geom_histogram(binwidth = 1,
                  color = "black",
@@ -75,34 +67,60 @@ stat1 %>% ggplot(aes(x = paper_level)) +
   scale_x_continuous(breaks = 1:10)
 ```
 
+
+### Summary of Levels
+
+| Level | Short summary                      |
+|:-----:|:----------------------------------:|
+| 1     | No Data or Code                    |
+| 2     | Only Code                          |
+| 3     | Partial analysis data & code       |
+| 4     | All analysis data & code           |
+| 5     | Reproducible from analysis data    |
+| 6     | All cleaning code + L4             |
+| 7     | Some raw data     + L6             |
+| 8     | All cleaning code and raw data     |
+| 9     | Reproducible from analysis  + L8   |
+| 10    | Reproducible from raw data         |
+
+
 ### Description
 
-Since its launch, in August 2021, the Social Science Reproduction Platform (SSRP) has help 
-XXXX students and researchers around the world record the result of their reproductions in a standardized way. 
-As part of their exercise, these reproducers have assessed a total of XXXX papers, and a total of YYYYY claims. These reproductions have also generate XXXXX improvements and YYYYY new robustness tests.  
+Since its launch, in August 2021, the Social Science Reproduction Platform (SSRP) has help `r reproductions` students and researchers around the world record the result of their reproductions in a standardized way. As part of their exercise, these reproducers have assessed a total of `r papers` papers, and a total of `r claims` claims. 
 
+## Row {data-height="500"}
 
-
-Row {data-height=500}
------------------------------------------------------------------------
-
-### Reproducers Around the World 
-
-
+### Reproducers Around the World
 
 ```{r,   fig_width = 10, fig_height = 3.8, fig_retina = 2}
 library(rnaturalearth)
 library(rgeos)
+
+#get number of reproductions by country
+
+#merge to the world data 
+
 world <- ne_countries(returnclass = "sf")
-#> [1] "sf"    "data.frame"
+
 testdata <- data.frame(admin = world$admin,
                        nreproductions = c(rep(0,29),
-                                          2, # 2 Chile reproductions
+                                          0, # 2 Chile reproductions
                                           rep(0,138),
-                                          5, # 5 US reproductions
+                                          14, # 5 US reproductions
                                           rep(0,8)))
 
 plot_ly(world,type = 'choropleth', locations = world$adm0_a3,
         color = I("gray90"), stroke = I("black"), span = I(1)) %>%
   add_trace(z = testdata$nreproductions, colorscale="YlGnBu", reversescale=T)
 ```
+
+
+
+### Universities  
+
+| University | Number of Reproductions |
+|:-------------------:|:------:|
+| UC Berkeley         | 14     |
+|                     |        |
+|                     |        |
+
