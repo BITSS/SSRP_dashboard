@@ -86,7 +86,7 @@ stat1 %>% ggplot(aes(x = paper_level)) +
 
 ### Description
 
-Since its launch, in August 2021, the Social Science Reproduction Platform (SSRP) has help `r reproductions` students and researchers around the world record the result of their reproductions in a standardized way. As part of their exercise, these reproducers have assessed a total of `r papers` papers, and a total of `r claims` claims. 
+This dashboard shows summary statistics of `r reproductions` reproductions recorded on the Social Science Reproduction Platform (SSRP) by students and researchers around the world. SSRP users have reproduced `r papers` papers and `r claims` claims. 
 
 ## Row {data-height="500"}
 
