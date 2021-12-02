@@ -63,7 +63,7 @@ stat1 %>% ggplot(aes(x = paper_level)) +
   labs(title = "Distribution of Reproduction Scores: Paper Level",
        x = "Reproducibility Score",
        y = "Count") +
-  coord_cartesian(ylim =  c(0, 5)) +
+  coord_cartesian(ylim =  c(0, 10)) +
   scale_x_continuous(breaks = 1:10)
 ```
 
@@ -97,17 +97,21 @@ library(rnaturalearth)
 library(rgeos)
 
 #get number of reproductions by country
-
-#merge to the world data 
+country_counts <- df_app %>% 
+  group_by(reproduction_id) %>% 
+  slice(1) %>%
+  group_by(country_code) %>% 
+  count %>% 
+  rename(postal = country_code)
 
 world <- ne_countries(returnclass = "sf")
+#merge to the world data 
+world <- left_join(world, country_counts, by=c("postal")) %>% 
+  mutate(n =  ifelse(is.na(n), 0, n))
 
 testdata <- data.frame(admin = world$admin,
-                       nreproductions = c(rep(0,29),
-                                          0, # 2 Chile reproductions
-                                          rep(0,138),
-                                          14, # 5 US reproductions
-                                          rep(0,8)))
+                       nreproductions = world$n
+                       )
 
 plot_ly(world,type = 'choropleth', locations = world$adm0_a3,
         color = I("gray90"), stroke = I("black"), span = I(1)) %>%
@@ -120,7 +124,7 @@ plot_ly(world,type = 'choropleth', locations = world$adm0_a3,
 
 | University | Number of Reproductions |
 |:-------------------:|:------:|
-| UC Berkeley         | 14     |
+| UC Berkeley         | `r reproductions`      |
 |                     |        |
 |                     |        |
 

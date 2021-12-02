@@ -31,15 +31,14 @@ library(stringdist)
 # generate a variable that takes the same value for titles that sound similar
 # generate unique identifier for each reproduction
 
-df <- read_csv("all_reproductions_aug_15_2021.csv") %>%
-    mutate(clean_doi = str_extract(
-        S0_1Q1P1,
-        regex("10\\.\\d{4,9}/[-._;()/:a-z0-9]+$",   #Explain regex
-              ignore_case = T)
-    )) %>%
-    mutate(
-        S0_1Q1P2 = ifelse(
-            test = (
+df <- read_csv("all_reproductions_nov_29_2021.csv") %>%
+    mutate(clean_doi = str_extract( S0_1Q1P1,
+                                    regex("10\\.\\d{4,9}/[-._;()/:a-z0-9]+$",   #Explain regex
+                                          ignore_case = T) 
+                                    )
+           ) %>%
+    mutate(S0_1Q1P2 = ifelse(
+      test = (
                 S0_1Q1P2 == "[Fernando] Railroads of the Raj: Estimating the Impact of Transportation Infrastructure"
             ),
             yes = "Railroads of the Raj: Estimating the Impact of Transportation Infrastructure",
@@ -78,7 +77,8 @@ df_spec <- df %>% filter(status == "submitted" | status == "abandoned") %>%
         contains("S1_3Q5C4_r1c"),
         contains("S1_3Q5C5_r1c"),
         contains("S1_3Q5C6_r1c"),
-        contains("S1_3Q5C7_r1c")       #Name of display items for last claim 
+        contains("S1_3Q5C7_r1c"),
+        contains("S1_3Q5C8_r1c")         #Name of display items for last claim 
     ) %>% 
   select(!( ends_with(c("c7", "c8", "c9") , ignore.case = FALSE) )) %>% 
     rename_at(.vars = paste0("S1_3Q1C", 1:claims_max),
@@ -150,12 +150,37 @@ df_app <- left_join(df_spec, df_di,
 
 write.csv(df_app, file = "test.csv")
 
+# - aggregate all obs at the claim-di level
+# - aggregate at the claim level by taking the average of display item (one per di)
+# - aggregate at the reproduction level by taking the average of claims (one per claim)
+# - aggregate at the paper level by taking the average of reproduction (one per repro)
+stat1 <- df_app %>% 
+    group_by(similar_title, reproduction_id, claims, diname) %>%      #repro-claim-di level (min? max? median? it should not matter)
+    summarize(claim_di_level = mean(score)) %>% 
+    ungroup(diname) %>% 
+    summarise(claim_level = mean(claim_di_level)) %>%  #repro-claim level (min? max? median?)
+    ungroup(claims) %>% 
+    summarize(repro_level = mean(claim_level)) %>% 
+    ungroup(reproduction_id) %>% 
+    summarise(paper_level = mean(repro_level))        #repro level 
+stat1 %>% ggplot(aes(x = paper_level)) +
+  geom_histogram(binwidth = 1,
+                 color = "black",
+                 fill = "gray") +
+  labs(title = "Distribution of Reproduction Scores: Paper Level",
+       x = "Reproducibility Score",
+       y = "Count") +
+  coord_cartesian(ylim =  c(0, 10)) +
+  scale_x_continuous(breaks = 1:10)
+
+
+
 stat1 %>% ggplot(aes(x = paper_level)) + 
     geom_histogram(binwidth = 1, color="black", fill="gray") +
     labs(title = "Distribution of Reproduction Scores: Paper Level", 
          x = "Reproducibility Score", 
          y = "Count") +
-    coord_cartesian(ylim =  c( 0, 5 )) +
+    coord_cartesian(ylim =  c( 0, 10 )) +
     scale_x_continuous(breaks=1:10)
 
 
