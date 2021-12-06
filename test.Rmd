@@ -92,7 +92,7 @@ This dashboard shows summary statistics of `r reproductions` reproductions recor
 
 ### Reproducers Around the World
 
-```{r,   fig_width = 10, fig_height = 3.8, fig_retina = 2}
+```{r map,   fig_width = 10, fig_height = 3.8, fig_retina = 2}
 library(rnaturalearth)
 library(rgeos)
 
@@ -119,7 +119,7 @@ plot_ly(world,type = 'choropleth', locations = world$adm0_a3,
 ```
 
 
-
+<!--
 ### Universities  
 
 | University | Number of Reproductions |
@@ -127,4 +127,7 @@ plot_ly(world,type = 'choropleth', locations = world$adm0_a3,
 | UC Berkeley         | `r reproductions`      |
 |                     |        |
 |                     |        |
+
+-->
+
 
