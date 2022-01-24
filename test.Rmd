@@ -63,7 +63,7 @@ stat1 %>% ggplot(aes(x = paper_level)) +
   labs(title = "Distribution of Reproduction Scores: Paper Level",
        x = "Reproducibility Score",
        y = "Count") +
-  coord_cartesian(ylim =  c(0, 15)) +
+  coord_cartesian(ylim =  c(0, 20)) +
   scale_x_continuous(breaks = 1:10)
 ```
 
