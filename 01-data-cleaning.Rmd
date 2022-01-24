@@ -31,7 +31,7 @@ library(stringdist)
 # generate a variable that takes the same value for titles that sound similar
 # generate unique identifier for each reproduction
 
-df <- read_csv("all_reproductions_2022_01_02.csv") %>%
+df <- read_csv("all_reproductions_2022_01_23.csv") %>%
     mutate(clean_doi = str_extract( S0_1Q1P1,
                                     regex("10\\.\\d{4,9}/[-._;()/:a-z0-9]+$",   #Explain regex
                                           ignore_case = T) 
