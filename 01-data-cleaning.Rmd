@@ -31,7 +31,7 @@ library(stringdist)
 # generate a variable that takes the same value for titles that sound similar
 # generate unique identifier for each reproduction
 
-df <- read_csv("all_reproductions_2022_01_23.csv") %>%
+df <- read_csv("all_reproductions_2022_02_08.csv") %>%
     mutate(clean_doi = str_extract( S0_1Q1P1,
                                     regex("10\\.\\d{4,9}/[-._;()/:a-z0-9]+$",   #Explain regex
                                           ignore_case = T) 
@@ -256,7 +256,7 @@ df_app1 <- df_app %>%
             labs(title = "Distribution of Reproduction Scores: Paper Level", 
                  x = "Reproducibility Score", 
                  y = "Count") +
-            coord_cartesian(ylim =  c( 0, 5 )) +
+            coord_cartesian(ylim =  c( 0, 25 )) +
             scale_x_continuous(breaks=1:10)
 
 ```
