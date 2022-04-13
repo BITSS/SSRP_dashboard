@@ -1,0 +1,176 @@
+---
+title: "Reproducibility Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup_02, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(stringdist)       
+library(readr)
+library(knitr)
+library(viridisLite)
+library(highcharter)
+library(plotly)
+
+knit("./03-data-filtering.Rmd")
+```
+
+## Column
+
+### Reproductions
+
+```{r asd}
+reproductions <- length(unique(c(claims_df$reproduction_id,abandoned_df$reproduction_id))) #claims instead of dis because some have all NA repro scores
+valueBox(reproductions, icon = "fa-pencil")
+```
+
+### Papers
+
+```{r asd1}
+papers <-  length(unique(c(claims_df$similar_title,abandoned_df$similar_title)))
+valueBox(papers, icon = "fa-file")
+
+claims <- claims_df %>% mutate("claim_id" = paste0(similar_title, claim_N)) %>% summarise( length( unique(claim_id)) ) %>% as.numeric()
+```
+
+## Row {data-height="500"}
+
+### Levels of Reproducibility
+```{r}
+# - aggregate all obs at the claim-di level
+# - aggregate at the claim level by taking the average of display item (one per di)
+# - aggregate at the reproduction level by taking the average of claims (one per claim)
+# - aggregate at the paper level by taking the average of reproduction (one per repro)
+stat1 <- dis_df %>% 
+    group_by(similar_title, reproduction_id) %>%      #repro-claim-di level (min? max? median? it should not matter)
+    summarize(repro_level = mean(repro_score)) %>% 
+    ungroup(reproduction_id) %>% 
+    summarise(paper_level = mean(repro_level))        #repro level 
+
+level_max <- stat1 %>%
+    mutate(paper_level=floor(paper_level)) %>%
+    group_by(paper_level) %>%
+    summarize(n = n()) %>%
+    max()
+
+stat1 %>% ggplot(aes(x = paper_level)) +
+  geom_histogram(binwidth = 1,
+                 color = "black",
+                 fill = "gray") +
+  labs(title = "Distribution of Reproduction Scores: Paper Level",
+       x = "Reproducibility Score",
+       y = "Count") +
+  coord_cartesian(ylim =  c(0, 1.1*level_max)) +
+  scale_x_continuous(breaks = 1:10) +
+    theme(panel.background = element_rect(fill="white"),
+          panel.grid.major.y = element_line(color="grey80"),
+          panel.grid.minor.y = element_line(color="grey80"),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank())
+```
+
+
+### Summary of Levels
+
+| Level | Short summary                      |
+|:-----:|:----------------------------------:|
+| 1     | No Data or Code                    |
+| 2     | Only Code                          |
+| 3     | Partial analysis data & code       |
+| 4     | All analysis data & code           |
+| 5     | Reproducible from analysis data    |
+| 6     | All cleaning code + L4             |
+| 7     | Some raw data     + L6             |
+| 8     | All cleaning code and raw data     |
+| 9     | Reproducible from analysis  + L8   |
+| 10    | Reproducible from raw data         |
+
+
+### Description
+
+This dashboard shows summary statistics of `r reproductions` reproductions recorded on the Social Science Reproduction Platform (SSRP) by students and researchers around the world. SSRP users have reproduced `r papers` papers and `r claims` claims. 
+
+## Row {data-height="500"}
+
+### Reproducers Around the World
+
+```{r map,   fig_width = 20, fig_height = 7.6, fig_retina = 2}
+library(rnaturalearth)
+library(rgeos)
+library(RColorBrewer)
+
+#get number of reproductions by country
+country_counts <- dis_df %>% 
+  group_by(reproduction_id) %>% 
+  slice(1) %>%
+  group_by(country_code) %>% 
+  count %>% 
+  rename(postal = country_code)
+
+world <- ne_countries(returnclass = "sf",scale="small") %>%
+    filter(admin!="Antarctica")
+#merge to the world data 
+world <- left_join(world, country_counts, by=c("postal")) %>% 
+  mutate(n =  ifelse(is.na(n), 0, n))
+
+# Make bins
+breaks <- quantile(unique(world$n),
+                   probs = seq(0,1,0.25))
+
+world$breaks <- cut(world$n,
+        breaks = breaks,
+        include.lowest = TRUE,
+        labels=F)
+#world$breaks <- as.character(world$breaks)
+
+world$text <- paste0(world$admin,"\nReproductions: ",world$n)
+world$n[world$n==0] <- NA # To make them stand out on map
+
+# light grey boundaries
+l <- list(color = toRGB("grey"), width = 0.5)
+g <- list(
+  showframe = FALSE,
+  showcoastlines = FALSE,
+  projection = list(type = 'Mercator')
+)
+
+fig <- ggplot(data=world)+
+    geom_sf(aes(fill=n, text=text),
+            color="grey60",size=0.1)+
+    scale_fill_distiller(palette="YlGnBu",direction = 1,
+                         name="Reproductions") +
+    theme(panel.background = element_blank(),
+          axis.ticks = element_blank(),
+          axis.text = element_blank()
+          )
+
+
+fig <- ggplotly(fig,
+                tooltip="text") %>%
+    style(hoverlabel = list(bgcolor = "white")) %>%
+    layout(xaxis = list(autorange = TRUE),
+         yaxis = list(autorange = TRUE))
+
+fig
+```
+
+
+<!--
+### Universities  
+
+| University | Number of Reproductions |
+|:-------------------:|:------:|
+| UC Berkeley         | `r reproductions`      |
+|                     |        |
+|                     |        |
+
+-->
+
+

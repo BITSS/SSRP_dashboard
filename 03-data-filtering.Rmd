@@ -1,0 +1,83 @@
+---
+title: "Data Cleaning"
+author: "Fernando Hoces de la Guardia"
+date: "7/30/2021"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup_01, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(shiny)
+library(tidyverse)
+library(stringdist)
+```
+
+### First: basic clean up  
+- load data  
+- clean some DOIs  
+- rename the title of a reproduction  
+- generate a variable that takes the same value for titles that sound similar  
+- generate unique identifier for each reproduction  
+- Identify the maximum number of claims and display items reproduced across all reproduction attempts
+
+```{r 01-DisplayItems}
+dis_df <- read_csv("./processed/tidy_di_df.csv") %>%
+    mutate(paper_title= ifelse(
+        test = # Fixing titles
+            (
+                paper_title == "[Fernando] Railroads of the Raj: Estimating the Impact of Transportation Infrastructure"
+            ),
+            yes = "Railroads of the Raj: Estimating the Impact of Transportation Infrastructure",
+            no = paper_title
+        ),
+        similar_title = phonetic(paper_title)
+    ) %>%
+    filter(!is.na(repro_score))
+```
+
+```{r 02-Claims}
+claims_df <- read_csv("./processed/tidy_claim_df.csv") %>%
+    mutate(paper_title= ifelse(
+        test = # Fix Fernando's title
+            (
+                paper_title == "[Fernando] Railroads of the Raj: Estimating the Impact of Transportation Infrastructure"
+            ),
+            yes = "Railroads of the Raj: Estimating the Impact of Transportation Infrastructure",
+            no = paper_title
+        ),
+        similar_title = phonetic(paper_title)
+    ) # 98 reproductions (no abandoned)
+```
+
+```{r 03-abandoned}
+    abandoned_df <- read_csv("./processed/tidy_abandoned_df.csv") %>%
+    mutate(paper_title= ifelse(
+        test = # Fix Fernando's title
+            (
+                paper_title == "[Fernando] Railroads of the Raj: Estimating the Impact of Transportation Infrastructure"
+            ),
+            yes = "Railroads of the Raj: Estimating the Impact of Transportation Infrastructure",
+            no = paper_title
+        ),
+        similar_title = phonetic(paper_title)
+    )  # 104 reproductions total
+```
+
+# Make sure there's at least one estimate associated with each claim
+
+The rationale for this filter is that claims should have at least some estimate in the paper associated with them.
+
+```{r 04-at least one estimate associated with each claim}
+ests <- read_csv("./processed/tidy_est_df.csv") %>%
+    filter(!is.na(spec_est),
+           !is.na(claim_N)) %>%
+    select(reproducer_id,reproduction_id,claim_N) %>%
+    unique()
+
+claims_df <- inner_join(claims_df,ests,
+                        by=c("reproducer_id","reproduction_id",
+                             "claim_N"))
+```
+
