@@ -1,7 +1,6 @@
 ---
 title: "Data Cleaning"
 author: "Fernando Hoces de la Guardia"
-date: "7/30/2021"
 output: html_document
 editor_options: 
   chunk_output_type: console
