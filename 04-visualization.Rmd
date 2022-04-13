@@ -6,6 +6,14 @@ output:
     vertical_layout: scroll
 editor_options: 
   chunk_output_type: console
+  
+knit: (function(input, ...) {
+    rmarkdown::render(
+      input,
+      output_file = 'index.html',
+      envir = globalenv()
+    )
+  })
 ---
 
 ```{r setup_02, include=FALSE}
