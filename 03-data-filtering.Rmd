@@ -81,3 +81,8 @@ claims_df <- inner_join(claims_df,ests,
                              "claim_N"))
 ```
 
+# Future Filters
+
+This section explains how to add a filter in the future. Additional features should have a title (e.g. "Make sure there's at least one estimate associated with each claim") followed by a description of the reason we want this filter.
+
+Code for the filter should reduce the number of observations in `claims_df`, `dis_df`, and/or `abandoned_df`, writing over the old df.
