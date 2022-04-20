@@ -12,6 +12,15 @@ knitr::opts_chunk$set(echo = TRUE)
 library(shiny)
 library(tidyverse)
 library(stringdist)
+
+clean_path <- Sys.getenv("clean_path")
+```
+
+```{r update tidy dfs}
+tidy_dfs <- list.files(paste0(clean_path,"/processed/"))
+file.copy(paste0(clean_path,"/processed/",tidy_dfs), 
+          paste0("./processed/",tidy_dfs),
+          overwrite = T)
 ```
 
 ### First: basic clean up  
