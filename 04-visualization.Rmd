@@ -44,11 +44,15 @@ valueBox(reproductions, icon = "fa-pencil")
 ```{r asd1}
 papers <-  length(unique(c(claims_df$similar_title,abandoned_df$similar_title)))
 valueBox(papers, icon = "fa-file")
-
-claims <- claims_df %>% mutate("claim_id" = paste0(similar_title, claim_N)) %>% summarise( length( unique(claim_id)) ) %>% as.numeric()
 ```
 
-## Row {data-height="500"}
+### Claims
+```{r asd2}
+claims <- claims_df %>% mutate("claim_id" = paste0(similar_title, claim_N)) %>% summarise( length( unique(claim_id)) ) %>% as.numeric()
+valueBox(claims, icon = "fa-comment")
+```
+
+## Row {.tabset data-height="500"}
 
 ### Levels of Reproducibility
 ```{r}
@@ -100,16 +104,13 @@ stat1 %>% ggplot(aes(x = paper_level)) +
 | 9     | Reproducible from analysis  + L8   |
 | 10    | Reproducible from raw data         |
 
-
-### Description
-
-This dashboard shows summary statistics of `r reproductions` reproductions recorded on the Social Science Reproduction Platform (SSRP) by students and researchers around the world. SSRP users have reproduced `r papers` papers and `r claims` claims. 
+For a more comprehensive description of the levels of computational reproducibility, see the [ACRe Guide](https://bitss.github.io/ACRE/assessment.html#levels-of-computational-reproducibility-for-a-specific-display-item)
 
 ## Row {data-height="500"}
 
 ### Reproducers Around the World
 
-```{r map,   fig_width = 20, fig_height = 7.6, fig_retina = 2}
+```{r map,   fig_width = 15, fig_height = 7.6, fig_retina = 2}
 library(rnaturalearth)
 library(rgeos)
 library(RColorBrewer)
