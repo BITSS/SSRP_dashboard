@@ -8,6 +8,24 @@ editor_options:
 
 
 
+<div class="knitr-options" data-fig-width="576" data-fig-height="460"></div>
+
+
+```r
+tidy_dfs <- list.files(paste0(clean_path,"/processed/"))
+file.copy(paste0(clean_path,"/processed/",tidy_dfs), 
+          paste0("./processed/",tidy_dfs),
+          overwrite = T)
+```
+
+
+
+```
+ [1] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
+```
+
+
+
 ### First: basic clean up  
 - load data  
 - clean some DOIs  
@@ -95,3 +113,8 @@ claims_df <- inner_join(claims_df,ests,
 
 
 
+# Future Filters
+
+This section explains how to add a filter in the future. Additional features should have a title (e.g. "Make sure there's at least one estimate associated with each claim") followed by a description of the reason we want this filter.
+
+Code for the filter should reduce the number of observations in `claims_df`, `dis_df`, and/or `abandoned_df`, writing over the old df.
