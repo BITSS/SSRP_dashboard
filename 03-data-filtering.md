@@ -92,10 +92,9 @@ claims_df <- read_csv("./processed/tidy_claim_df.csv") %>%
 
 
 
-# Change to drop if no score rather than no estimate
-# Make sure there's at least one estimate associated with each claim
+# Make sure there's at least one scored Display Item
 
-The rationale for this filter is that claims should have at least some estimate in the paper associated with them.
+The rationale for this filter is that papers should have some sort of reproducibility score associated with them to be counted.
 
 <div class="knitr-options" data-fig-width="576" data-fig-height="460"></div>
 

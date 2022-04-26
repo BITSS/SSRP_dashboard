@@ -82,6 +82,37 @@ stat1 %>% ggplot(aes(x = paper_level)) +
 ```
 
 
+### Levels of Reproducibility (Abandoned Included)
+```{r}
+abandoned_scores <- abandoned_df %>%
+    mutate(paper_level=1) %>%
+    group_by(similar_title) %>%
+    summarize(paper_level=mean(paper_level))
+
+stat2 <- rbind.data.frame(stat1,abandoned_scores)
+
+level_max_abd <- stat2 %>%
+    mutate(paper_level=floor(paper_level)) %>%
+    group_by(paper_level) %>%
+    summarize(n = n()) %>%
+    max()
+
+stat2 %>% ggplot(aes(x = paper_level)) +
+  geom_histogram(binwidth = 1,
+                 color = "black",
+                 fill = "gray") +
+  labs(title = "Distribution of Reproduction Scores: Paper Level",
+       x = "Reproducibility Score",
+       y = "Count") +
+  coord_cartesian(ylim =  c(0, 1.1*level_max_abd)) +
+  scale_x_continuous(breaks = 1:10) +
+    theme(panel.background = element_rect(fill="white"),
+          panel.grid.major.y = element_line(color="grey80"),
+          panel.grid.minor.y = element_line(color="grey80"),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank())
+```
+
 ### Summary of Levels
 
 | Level | Short summary                      |
