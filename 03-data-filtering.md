@@ -93,6 +93,7 @@ claims_df <- read_csv("./processed/tidy_claim_df.csv") %>%
 
 
 
+# Change to drop if no score rather than no estimate
 # Make sure there's at least one estimate associated with each claim
 
 The rationale for this filter is that claims should have at least some estimate in the paper associated with them.
@@ -101,15 +102,13 @@ The rationale for this filter is that claims should have at least some estimate 
 
 
 ```r
-ests <- read_csv("./processed/tidy_est_df.csv") %>%
-    filter(!is.na(spec_est),
-           !is.na(claim_N)) %>%
-    select(reproducer_id,reproduction_id,claim_N) %>%
+has_score <- dis_df %>%
+    select(reproduction_id) %>%
     unique()
 
-claims_df <- inner_join(claims_df,ests,
-                        by=c("reproducer_id","reproduction_id",
-                             "claim_N"))
+claims_df <- claims_df %>%
+    inner_join(has_score,
+               by="reproduction_id")
 ```
 
 
