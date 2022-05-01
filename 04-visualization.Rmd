@@ -183,19 +183,30 @@ g <- list(
 )
 
 fig <- ggplot(data=world)+
-    geom_sf(aes(fill=n, text=text),
-            color="grey60",size=0.1)+
+    geom_sf(aes(fill=n, text=text, color = admin),
+            size=0)+
     scale_fill_distiller(palette="YlGnBu",direction = 1,
                          name="Reproductions") +
     theme(panel.background = element_blank(),
           axis.ticks = element_blank(),
-          axis.text = element_blank()
+          axis.text = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank()
           )
 
+# Workaround for getting hover over polygons:
+# https://github.com/plotly/plotly.R/issues/1641#issuecomment-550477069
 
 fig <- ggplotly(fig,
-                tooltip="text") %>%
-    style(hoverlabel = list(bgcolor = "white")) %>%
+                tooltip="text") 
+
+fig <- fig %>%
+    style(hoverlabel = list(bgcolor = "white"),
+          hoveron="fills",
+          line.color="grey60",
+          traces = seq.int(2, length(fig$x$data))
+          ) %>%
+    hide_legend() %>%
     layout(xaxis = list(autorange = TRUE),
          yaxis = list(autorange = TRUE))
 
