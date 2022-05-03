@@ -55,70 +55,98 @@ valueBox(claims, icon = "fa-comment")
 
 ## Row {.tabset data-height="500"}
 
-### Levels of Reproducibility
-```{r}
-# - aggregate all obs at the claim-di level
-# - aggregate at the claim level by taking the average of display item (one per di)
-# - aggregate at the reproduction level by taking the average of claims (one per claim)
-# - aggregate at the paper level by taking the average of reproduction (one per repro)
-stat1 <- dis_df %>% 
-    group_by(similar_title, reproduction_id) %>%      #repro-claim-di level (min? max? median? it should not matter)
-    summarize(repro_level = mean(repro_score)) %>% 
-    ungroup(reproduction_id) %>% 
-    summarise(paper_level = mean(repro_level))        #repro level 
+```{r histogram function}
+# This function takes a dataframe, groups it by a list of variables, applies a function to summarize the reproducibility (possibly weighted by a variable), and then iteratively ungroups until it produces a paper-level summary. 
 
-level_max <- stat1 %>%
+# The argument `vars` is the vector of variables to group by listed in order from coarsest (i.e. smallest number of unique values) to finest (i.e. largest number of unique values)
+
+# fn is the function to summarize at each step
+
+# w is a column to use as weights
+
+paper_hist <- function(df, vars, fn, w=NULL){
+    n_ungroup <- length(vars)
+    
+    if (!is.null(w)){
+        stat1 <- df %>% 
+        group_by(across(vars)) %>%
+        summarise(paper_level = fn(repro_score))
+    if (length(vars)>1){
+        for (i in c(0:(length(vars)-2))){
+        stat1 <- stat1 %>%
+            ungroup(vars[length(vars)-i]) %>%
+            summarise(paper_level=fn(paper_level))
+    }
+    }
+    } else{
+        stat1 <- df %>% 
+        group_by(across(vars)) %>%
+        summarise(paper_level = fn(repro_score,w=w))
+    if (length(vars)>1){
+        for (i in c(0:(length(vars)-2))){
+        stat1 <- stat1 %>%
+            ungroup(vars[length(vars)-i]) %>%
+            summarise(paper_level=fn(paper_level,w=w))
+    }
+    }
+    }
+    
+    level_max <- stat1 %>%
     mutate(paper_level=floor(paper_level)) %>%
     group_by(paper_level) %>%
     summarize(n = n()) %>%
     max()
 
-stat1 %>% ggplot(aes(x = paper_level)) +
-  geom_histogram(binwidth = 1,
-                 color = "black",
-                 fill = "gray") +
-  labs(title = "Distribution of Reproduction Scores: Paper Level",
-       x = "Reproducibility Score",
-       y = "Count") +
-  coord_cartesian(ylim =  c(0, 1.1*level_max)) +
-  scale_x_continuous(breaks = 1:10) +
-    theme(panel.background = element_rect(fill="white"),
+    out <- stat1 %>% 
+        ggplot(aes(x = paper_level)) +
+        geom_histogram(binwidth = 1,
+                       color = "black",
+                       fill = "gray") +
+        coord_cartesian(ylim =  c(0, 1.1*level_max)) +
+        scale_x_continuous(breaks = 1:10) +
+        theme(panel.background = element_rect(fill="white"),
           panel.grid.major.y = element_line(color="grey80"),
           panel.grid.minor.y = element_line(color="grey80"),
           panel.grid.major.x = element_blank(),
           panel.grid.minor.x = element_blank())
+    return(out)
+}
+
+```
+
+### Levels of Reproducibility
+```{r}
+paper_hist(dis_df, c("similar_title","reproduction_id"),mean)+
+    labs(title = "Distribution of Reproduction Scores: Paper Level",
+             x = "Reproducibility Score",
+             y = "Count")
 ```
 
 
 ### Levels of Reproducibility (Abandoned Included)
 ```{r}
 abandoned_scores <- abandoned_df %>%
-    mutate(paper_level=1) %>%
-    group_by(similar_title) %>%
-    summarize(paper_level=mean(paper_level))
+    select(similar_title,reproduction_id) %>%
+    mutate(repro_score=1)
 
-stat2 <- rbind.data.frame(stat1,abandoned_scores)
+dis_aband <- rbind.data.frame(
+    select(dis_df,similar_title,reproduction_id,repro_score),
+    abandoned_scores
+    )
 
-level_max_abd <- stat2 %>%
-    mutate(paper_level=floor(paper_level)) %>%
-    group_by(paper_level) %>%
-    summarize(n = n()) %>%
-    max()
+paper_hist(dis_aband,c("similar_title","reproduction_id"),mean)+
+    labs(title = "Distribution of Reproduction Scores: Paper Level",
+             x = "Reproducibility Score",
+             y = "Count")
+```
 
-stat2 %>% ggplot(aes(x = paper_level)) +
-  geom_histogram(binwidth = 1,
-                 color = "black",
-                 fill = "gray") +
-  labs(title = "Distribution of Reproduction Scores: Paper Level",
-       x = "Reproducibility Score",
-       y = "Count") +
-  coord_cartesian(ylim =  c(0, 1.1*level_max_abd)) +
-  scale_x_continuous(breaks = 1:10) +
-    theme(panel.background = element_rect(fill="white"),
-          panel.grid.major.y = element_line(color="grey80"),
-          panel.grid.minor.y = element_line(color="grey80"),
-          panel.grid.major.x = element_blank(),
-          panel.grid.minor.x = element_blank())
+### Levels of Reproducibility, Max within paper
+```{r}
+paper_hist(dis_df,c("similar_title"),max)+
+    labs(title = "Distribution of Max Reproduction Scores: Paper Level",
+             x = "Reproducibility Score",
+             y = "Count")
+
 ```
 
 ### Summary of Levels
