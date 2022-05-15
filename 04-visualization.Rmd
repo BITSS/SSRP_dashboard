@@ -60,36 +60,24 @@ valueBox(claims, icon = "fa-comment")
 
 # The argument `vars` is the vector of variables to group by listed in order from coarsest (i.e. smallest number of unique values) to finest (i.e. largest number of unique values)
 
-# fn is the function to summarize at each step
+# fns is a list of functions to do aggregation (e.g. mean) in the order they should be applied
 
 # w is a column to use as weights
 
-paper_hist <- function(df, vars, fn, w=NULL){
+paper_hist <- function(df, vars, fns, w=NULL){
     n_ungroup <- length(vars)
+    stat1 <- df %>% 
+        group_by(across(vars)) %>%
+        summarise(paper_level = fns[[1]](repro_score,w=w))
+    if (length(vars)>1){
+        for (i in c(0:(length(vars)-2))){
+            
+        stat1 <- stat1 %>%
+            ungroup(vars[length(vars)-i]) %>%
+            summarise(paper_level=fns[[i+2]](paper_level,w=w))
+    }
+    }
     
-    if (!is.null(w)){
-        stat1 <- df %>% 
-        group_by(across(vars)) %>%
-        summarise(paper_level = fn(repro_score))
-    if (length(vars)>1){
-        for (i in c(0:(length(vars)-2))){
-        stat1 <- stat1 %>%
-            ungroup(vars[length(vars)-i]) %>%
-            summarise(paper_level=fn(paper_level))
-    }
-    }
-    } else{
-        stat1 <- df %>% 
-        group_by(across(vars)) %>%
-        summarise(paper_level = fn(repro_score,w=w))
-    if (length(vars)>1){
-        for (i in c(0:(length(vars)-2))){
-        stat1 <- stat1 %>%
-            ungroup(vars[length(vars)-i]) %>%
-            summarise(paper_level=fn(paper_level,w=w))
-    }
-    }
-    }
     
     level_max <- stat1 %>%
     mutate(paper_level=floor(paper_level)) %>%
@@ -116,14 +104,14 @@ paper_hist <- function(df, vars, fn, w=NULL){
 
 ### Levels of Reproducibility
 ```{r}
-paper_hist(dis_df, c("similar_title","reproduction_id"),mean)+
+paper_hist(dis_df, c("similar_title","reproduction_id"),list(mean,mean))+
     labs(title = "Distribution of Reproduction Scores: Paper Level",
              x = "Reproducibility Score",
              y = "Count")
 ```
 
 
-### Levels of Reproducibility (Abandoned Included)
+### Abandoned Included
 ```{r}
 abandoned_scores <- abandoned_df %>%
     select(similar_title,reproduction_id) %>%
@@ -134,16 +122,25 @@ dis_aband <- rbind.data.frame(
     abandoned_scores
     )
 
-paper_hist(dis_aband,c("similar_title","reproduction_id"),mean)+
+paper_hist(dis_aband,c("similar_title","reproduction_id"),list(mean,mean))+
     labs(title = "Distribution of Reproduction Scores: Paper Level",
              x = "Reproducibility Score",
              y = "Count")
 ```
 
-### Levels of Reproducibility, Max within paper
+### Max within paper
 ```{r}
-paper_hist(dis_df,c("similar_title"),max)+
-    labs(title = "Distribution of Max Reproduction Scores: Paper Level",
+paper_hist(dis_df,c("similar_title"),list(max))+
+    labs(title = "Distribution of Maximum Reproduction Scores: Paper Level",
+             x = "Reproducibility Score",
+             y = "Count")
+
+```
+
+### Min within paper
+```{r}
+paper_hist(dis_df,c("similar_title"),c(min))+
+    labs(title = "Distribution of Minimum Reproduction Scores: Paper Level",
              x = "Reproducibility Score",
              y = "Count")
 
