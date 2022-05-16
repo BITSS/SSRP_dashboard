@@ -18,7 +18,7 @@ knit: (function(input, ...) {
 ---
 
 ```{r setup_02, include=FALSE}
-library(flexdashboard)
+library(flexdashboard) # https://pkgs.rstudio.com/flexdashboard/
 library(shiny)
 library(tidyverse)
 library(stringdist)       
