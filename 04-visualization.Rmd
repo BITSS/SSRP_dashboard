@@ -102,17 +102,14 @@ paper_hist <- function(df, vars, fns, w=NULL){
 
 ```
 
-### Levels of Reproducibility
+
 ```{r}
-paper_hist(dis_df, c("similar_title","reproduction_id"),list(mean,mean))+
+main_hist <- paper_hist(dis_df, c("similar_title","reproduction_id"),list(mean,mean))+
     labs(title = "Distribution of Reproduction Scores: Paper Level",
              x = "Reproducibility Score",
              y = "Count")
-```
 
 
-### Abandoned Included
-```{r}
 abandoned_scores <- abandoned_df %>%
     select(similar_title,reproduction_id) %>%
     mutate(repro_score=1)
@@ -122,28 +119,47 @@ dis_aband <- rbind.data.frame(
     abandoned_scores
     )
 
+abandoned_hist <- 
 paper_hist(dis_aband,c("similar_title","reproduction_id"),list(mean,mean))+
     labs(title = "Distribution of Reproduction Scores: Paper Level",
              x = "Reproducibility Score",
              y = "Count")
-```
 
-### Max within paper
-```{r}
-paper_hist(dis_df,c("similar_title"),list(max))+
+max_hist <- paper_hist(dis_df,c("similar_title"),list(max))+
     labs(title = "Distribution of Maximum Reproduction Scores: Paper Level",
              x = "Reproducibility Score",
              y = "Count")
 
-```
-
-### Min within paper
-```{r}
-paper_hist(dis_df,c("similar_title"),c(min))+
+min_hist <- paper_hist(dis_df,c("similar_title"),c(min))+
     labs(title = "Distribution of Minimum Reproduction Scores: Paper Level",
              x = "Reproducibility Score",
              y = "Count")
 
+hists <- list(main_hist,abandoned_hist,max_hist,min_hist)
+y_tops <- sapply(hists, function(x) layer_scales(x)$y$range$range[2])
+y_top <- max(y_tops)
+hists <- lapply(hists, function(x) x+coord_cartesian(ylim =  c(0, y_top)))
+```
+
+### Levels of Reproducibility
+```{r}
+hists[[1]]
+```
+
+
+### Abandoned Included
+```{r}
+hists[[2]]
+```
+
+### Max within paper
+```{r}
+hists[[3]]
+```
+
+### Min within paper
+```{r}
+hists[[4]]
 ```
 
 ### Summary of Levels
