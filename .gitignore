@@ -50,3 +50,4 @@ vignettes/*.pdf
 
 # SSRP Data
 /processed/*
+03-data-filtering.md
