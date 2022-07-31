@@ -15,7 +15,7 @@ editor_options:
 tidy_dfs <- list.files(paste0(clean_path,"/processed/"))
 file.copy(paste0(clean_path,"/processed/",tidy_dfs), 
           paste0("./processed/",tidy_dfs),
-          overwrite = T)
+          overwrite = TRUE)
 ```
 
 
@@ -41,12 +41,9 @@ file.copy(paste0(clean_path,"/processed/",tidy_dfs),
 dis_df <- read_csv("./processed/tidy_di_df.csv") %>%
     mutate(paper_title= ifelse(
         test = # Fixing titles
-            (
-                paper_title == "[Fernando] Railroads of the Raj: Estimating the Impact of Transportation Infrastructure"
-            ),
+            (paper_title == "[Fernando] Railroads of the Raj: Estimating the Impact of Transportation Infrastructure"),
             yes = "Railroads of the Raj: Estimating the Impact of Transportation Infrastructure",
-            no = paper_title
-        ),
+            no = paper_title),
         similar_title = phonetic(paper_title)
     ) %>%
     filter(!is.na(repro_score))
