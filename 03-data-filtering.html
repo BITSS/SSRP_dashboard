@@ -255,7 +255,6 @@ if (window.hljs) {
 
 
 
-
 <style type="text/css">
 .main-container {
   max-width: 940px;
@@ -276,9 +275,6 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
-}
-details > summary > p:only-child {
-  display: inline;
 }
 pre code {
   padding: 0;
@@ -371,12 +367,8 @@ pre code {
 <pre class="r"><code>tidy_dfs &lt;- list.files(paste0(clean_path,&quot;/processed/&quot;))
 file.copy(paste0(clean_path,&quot;/processed/&quot;,tidy_dfs), 
           paste0(&quot;./processed/&quot;,tidy_dfs),
-          overwrite = T)</code></pre>
-<pre><code>## Warning in file.copy(paste0(clean_path, &quot;/processed/&quot;,
-## tidy_dfs), paste0(&quot;./processed/&quot;, : problem copying
-## C:UserssungsDropbox3_UCB_WorkSSRPSSRP_cleaning\processed to .
-## \processed\processed: No such file or directory</code></pre>
-<pre><code>## [1] FALSE</code></pre>
+          overwrite = TRUE)</code></pre>
+<pre><code>##  [1] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE</code></pre>
 <div id="first-basic-clean-up" class="section level3">
 <h3>First: basic clean up</h3>
 <ul>
@@ -397,16 +389,13 @@ across all reproduction attempts</li>
 <pre class="r"><code>dis_df &lt;- read_csv(&quot;./processed/tidy_di_df.csv&quot;) %&gt;%
     mutate(paper_title= ifelse(
         test = # Fixing titles
-            (
-                paper_title == &quot;[Fernando] Railroads of the Raj: Estimating the Impact of Transportation Infrastructure&quot;
-            ),
+            (paper_title == &quot;[Fernando] Railroads of the Raj: Estimating the Impact of Transportation Infrastructure&quot;),
             yes = &quot;Railroads of the Raj: Estimating the Impact of Transportation Infrastructure&quot;,
-            no = paper_title
-        ),
+            no = paper_title),
         similar_title = phonetic(paper_title)
     ) %&gt;%
     filter(!is.na(repro_score))</code></pre>
-<pre><code>## Rows: 306 Columns: 36
+<pre><code>## Rows: 394 Columns: 36
 ## ── Column specification ────────────────────────────────────────────────────────
 ## Delimiter: &quot;,&quot;
 ## chr (19): country_code, doi, paper_title, journal, authors, assess_all_ests,...
@@ -426,7 +415,7 @@ across all reproduction attempts</li>
         ),
         similar_title = phonetic(paper_title)
     ) # 98 reproductions (no abandoned)</code></pre>
-<pre><code>## Rows: 258 Columns: 15
+<pre><code>## Rows: 324 Columns: 15
 ## ── Column specification ────────────────────────────────────────────────────────
 ## Delimiter: &quot;,&quot;
 ## chr (9): country_code, doi, paper_title, journal, authors, claim_summ, claim...
