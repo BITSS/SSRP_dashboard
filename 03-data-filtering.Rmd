@@ -12,8 +12,8 @@ library(shiny)
 library(tidyverse)
 library(stringdist)
 
-#clean_path <- Sys.getenv("clean_path") # Use this for other users
-clean_path <- "C:/Users/sungs/Desktop/SSRP_cleaning" # Only for Sung
+clean_path <- Sys.getenv("clean_path") # Use this for other users
+#clean_path <- "C:/Users/sungs/Desktop/SSRP_cleaning" # Only for Sung
 ```
 
 ```{r update tidy dfs}
