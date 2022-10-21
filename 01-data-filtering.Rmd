@@ -13,7 +13,7 @@ library(tidyverse)
 library(stringdist)
 
 clean_path <- Sys.getenv("clean_path") # Use this for other users
-#clean_path <- "C:/Users/sungs/Desktop/SSRP_cleaning" # Only for Sung
+clean_path <- gsub("\\\\", "/", clean_path) # Replaces double-backslash with a single forward slash (only Window users should be affected)
 ```
 
 
