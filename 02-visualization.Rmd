@@ -17,6 +17,7 @@ knit: (function(input, ...) {
       envir = globalenv()
     )
   })
+
 ---
 
 ```{r setup_02, include=FALSE}
@@ -273,7 +274,7 @@ g <- list(
 
 fig <- ggplot(data=world)+
     geom_sf(aes(fill=n, text=text, color = admin),
-            size=0)+
+            size=0, color = "white")+
     scale_fill_distiller(palette="YlGnBu",direction = 1,
                          name="Reproductions") +
     theme(panel.background = element_blank(),
@@ -286,15 +287,14 @@ fig <- ggplot(data=world)+
 # Workaround for getting hover over polygons:
 # https://github.com/plotly/plotly.R/issues/1641#issuecomment-550477069
 
-fig <- ggplotly(fig,
-                tooltip="text") 
+fig <- ggplotly(fig, tooltip="text") 
 
 fig <- fig %>%
-    style(hoverlabel = list(bgcolor = "white"),
+        style(hoverlabel = list(bgcolor = "white"),
           hoveron="fills",
-          line.color="grey60",
+          line.color="white", line.width = 0.25,
           traces = seq.int(2, length(fig$x$data))
-          ) %>%
+          )%>%
     hide_legend() %>%
     layout(xaxis = list(autorange = TRUE),
          yaxis = list(autorange = TRUE))
