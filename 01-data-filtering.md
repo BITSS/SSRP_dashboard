@@ -15,8 +15,8 @@ Copy cleanned data sets (tidy df) from the `SSRP_cleanining` repo into this repo
 
 
 ```r
-tidy_dfs <- list.files(paste0(clean_path,"/processed/2023_5_23/"))
-file.copy(paste0(clean_path,"/processed/2023_5_23/",tidy_dfs), 
+tidy_dfs <- list.files(paste0(clean_path,"/processed/"))
+file.copy(paste0(clean_path,"/processed/",tidy_dfs), 
           paste0("./processed/",tidy_dfs),
           overwrite = TRUE)
 ```
@@ -24,7 +24,7 @@ file.copy(paste0(clean_path,"/processed/2023_5_23/",tidy_dfs),
 
 
 ```
- [1] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
+ [1] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
 ```
 
 
