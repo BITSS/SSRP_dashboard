@@ -32,7 +32,9 @@ library(highcharter)
 library(plotly)
 library(ggpubr)
 
-knit("./01-data-filtering.Rmd")
+#knit("./01-data-filtering.Rmd")
+source("./QuickFix_Cleaning.R")
+
 ```
 
 ## Column
@@ -41,7 +43,8 @@ knit("./01-data-filtering.Rmd")
 
 ```{r number of reproductions}
 # No. of claims instead of no. of display items because some have all NA repro scores
-reproductions <- length(unique(c(claims_df$reproduction_id, abandoned_df$reproduction_id))) 
+#reproductions <- length(unique(c(claims_df$reproduction_id, abandoned_df$reproduction_id))) 
+reproductions <- length(unique(tidy_all_paper_df$reproduction_id)) 
 
 valueBox(reproductions, icon = "fa-pencil")
 ```
@@ -49,7 +52,8 @@ valueBox(reproductions, icon = "fa-pencil")
 ### Papers
 
 ```{r number of papers}
-papers <-  length(unique(c(claims_df$similar_title, abandoned_df$similar_title)))
+# papers <-  length(unique(c(claims_df$similar_title, abandoned_df$similar_title)))
+papers <-  length(unique(tidy_all_paper_df$doi))
 
 valueBox(papers, icon = "fa-file")
 ```
@@ -57,8 +61,13 @@ valueBox(papers, icon = "fa-file")
 ### Claims
 
 ```{r number of claims}
-claims <- claims_df %>% 
-                mutate("claim_id" = paste0(similar_title, claim_N)) %>% 
+#claims <- claims_df %>% 
+#                mutate("claim_id" = paste0(similar_title, claim_N)) %>% 
+#                summarise(length(unique(claim_id))) %>% 
+#                as.numeric
+
+claims <- tidy_claim_df %>% 
+                mutate("claim_id" = paste0(reproduction_id, claim_N)) %>% 
                 summarise(length(unique(claim_id))) %>% 
                 as.numeric
 
@@ -157,7 +166,7 @@ abandoned_hist_text <- ggparagraph("In this figure, the reproducibility score is
 ```
 
 ```{r}
-max_hist <- paper_hist(dis_df, c("similar_title"), list(max)) +
+max_hist <- paper_hist(dis_df, c("doi"), list(max)) +
                           labs(title = "Distribution of Maximum Reproduction Scores: Paper Level",
                                    x = "Reproducibility Score",
                                    y = "Count")
@@ -168,7 +177,7 @@ max_hist_text <- ggparagraph("In this figure, the reproducibility score is the m
 ```
 
 ```{r}
-min_hist <- paper_hist(dis_df, c("similar_title"), c(min))+
+min_hist <- paper_hist(dis_df, c("doi"), c(min))+
                         labs(title = "Distribution of Minimum Reproduction Scores: Paper Level",
                                  x = "Reproducibility Score",
                                  y = "Count")
