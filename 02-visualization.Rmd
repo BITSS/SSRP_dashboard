@@ -1,23 +1,20 @@
 ---
 title: "Reproducibility Dashboard"
 date: "Last modified: `r Sys.Date()`"
-output: 
+output:
   flexdashboard::flex_dashboard:
     orientation: rows
     vertical_layout: scroll
-editor_options: 
-  
-  
+editor_options:
   chunk_output_type: console
-  
-knit: (function(input, ...) {
+knit: |
+  (function(input, ...) {
     rmarkdown::render(
       input,
       output_file = 'index.html',
       envir = globalenv()
     )
   })
-
 ---
 
 ```{r setup_02, include=FALSE}
@@ -32,8 +29,8 @@ library(highcharter)
 library(plotly)
 library(ggpubr)
 
-#knit("./01-data-filtering.Rmd")
-source("./QuickFix_Cleaning.R")
+knit("./01-data-filtering.Rmd")
+#source("./QuickFix_Cleaning.R")
 
 ```
 
@@ -44,7 +41,7 @@ source("./QuickFix_Cleaning.R")
 ```{r number of reproductions}
 # No. of claims instead of no. of display items because some have all NA repro scores
 #reproductions <- length(unique(c(claims_df$reproduction_id, abandoned_df$reproduction_id))) 
-reproductions <- length(unique(tidy_all_paper_df$reproduction_id)) 
+reproductions <- length(unique(tidy_all_repro_df$reproduction_id))
 
 valueBox(reproductions, icon = "fa-pencil")
 ```
@@ -53,7 +50,7 @@ valueBox(reproductions, icon = "fa-pencil")
 
 ```{r number of papers}
 # papers <-  length(unique(c(claims_df$similar_title, abandoned_df$similar_title)))
-papers <-  length(unique(tidy_all_paper_df$doi))
+papers <-  length(unique(tidy_all_repro_df$doi))
 
 valueBox(papers, icon = "fa-file")
 ```
@@ -66,10 +63,10 @@ valueBox(papers, icon = "fa-file")
 #                summarise(length(unique(claim_id))) %>% 
 #                as.numeric
 
-claims <- tidy_claim_df %>% 
-                mutate("claim_id" = paste0(reproduction_id, claim_N)) %>% 
-                summarise(length(unique(claim_id))) %>% 
-                as.numeric
+claims <- di_cl_df %>%
+                select(reproduction_id, claim_N) %>%
+                unique() %>%
+                nrow()
 
 valueBox(claims, icon = "fa-comment")
 ```
@@ -133,7 +130,12 @@ wrapper <- function(label, dev_width = dev.size("in")[1], dev_scaler = 18){
 ```
 
 ```{r}
-main_hist <- paper_hist(dis_df, c("similar_title", "reproduction_id"), list(mean, mean)) +
+# main_hist <- paper_hist(dis_df, c("similar_title", "reproduction_id"), list(mean, mean)) +
+#     labs(title = "Distribution of Reproduction Scores: Paper Level",
+#              x = "Reproducibility Score",
+#              y = "Count")
+
+main_hist <- paper_hist(di_cl_df %>% filter(abandoned == 0), c("doi", "reproduction_id"), list(mean, mean)) +
     labs(title = "Distribution of Reproduction Scores: Paper Level",
              x = "Reproducibility Score",
              y = "Count")
@@ -144,16 +146,23 @@ main_hist_text <- ggparagraph("In this figure, the reproducibility score is calc
 ```
 
 ```{r}
-abandoned_scores <- abandoned_df %>%
-                    select(similar_title,reproduction_id) %>%
-                    mutate(repro_score=1)
+# abandoned_scores <- abandoned_df %>%
+#                     select(similar_title,reproduction_id) %>%
+#                     mutate(repro_score=1)
+# 
+# dis_aband <- rbind.data.frame(
+#                     select(dis_df,similar_title,reproduction_id,repro_score),
+#                     abandoned_scores)
+# 
+# abandoned_hist <- paper_hist(dis_aband,
+#                              c("similar_title","reproduction_id"),
+#                              list(mean,mean)) +
+#                               labs(title = "Distribution of Reproduction Scores: Paper Level",
+#                                        x = "Reproducibility Score",
+#                                        y = "Count")
 
-dis_aband <- rbind.data.frame(
-                    select(dis_df,similar_title,reproduction_id,repro_score),
-                    abandoned_scores)
-
-abandoned_hist <- paper_hist(dis_aband,
-                             c("similar_title","reproduction_id"),
+abandoned_hist <- paper_hist(di_cl_df,
+                             c("doi","reproduction_id"),
                              list(mean,mean)) +
                               labs(title = "Distribution of Reproduction Scores: Paper Level",
                                        x = "Reproducibility Score",
@@ -166,7 +175,7 @@ abandoned_hist_text <- ggparagraph("In this figure, the reproducibility score is
 ```
 
 ```{r}
-max_hist <- paper_hist(dis_df, c("doi"), list(max)) +
+max_hist <- paper_hist(di_cl_df %>% filter(abandoned == 0), c("doi"), list(max)) +
                           labs(title = "Distribution of Maximum Reproduction Scores: Paper Level",
                                    x = "Reproducibility Score",
                                    y = "Count")
@@ -177,7 +186,7 @@ max_hist_text <- ggparagraph("In this figure, the reproducibility score is the m
 ```
 
 ```{r}
-min_hist <- paper_hist(dis_df, c("doi"), c(min))+
+min_hist <- paper_hist(di_cl_df %>% filter(abandoned == 0), c("doi"), c(min))+
                         labs(title = "Distribution of Minimum Reproduction Scores: Paper Level",
                                  x = "Reproducibility Score",
                                  y = "Count")
@@ -243,16 +252,26 @@ For a more comprehensive description of the levels of computational reproducibil
 
 ```{r map,   fig_width = 15, fig_height = 7.6, fig_retina = 2}
 library(rnaturalearth)
-library(rgeos)
+library(rgeos) # you may need devtools::install_version('rgeos', version = '0.6-4') to install this package
 library(RColorBrewer)
 
 #get number of reproductions by country
-country_counts <- dis_df %>% 
-  group_by(reproduction_id) %>% 
-  slice(1) %>%
-  group_by(country_code) %>% 
-  count %>% 
-  rename(postal = country_code)
+# country_counts <- dis_df %>% 
+#   group_by(reproduction_id) %>% 
+#   slice(1) %>%
+#   group_by(country_code) %>% 
+#   count %>% 
+#   rename(postal = country_code)
+
+country_counts <- tidy_all_repro_df %>% 
+    select(reproduction_id) %>% 
+    left_join(tidy_reproducer_df %>% select(reproduction_id, country_code), 
+              by = "reproduction_id") %>% 
+    group_by(reproduction_id) %>% 
+    slice(1) %>%
+    group_by(country_code) %>% 
+    count %>% 
+    rename(postal = country_code)
 
 world <- ne_countries(returnclass = "sf",scale="small") %>%
     filter(admin!="Antarctica")
