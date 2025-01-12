@@ -10,12 +10,13 @@ editor_options:
 knit: |
   (function(input, ...) {
     rmarkdown::render(
-      input,
+      input = input,
       output_file = 'index.html',
       envir = globalenv()
     )
   })
 ---
+
 
 ```{r setup_02, include=FALSE}
 library(flexdashboard) # https://pkgs.rstudio.com/flexdashboard/
@@ -30,17 +31,15 @@ library(plotly)
 library(ggpubr)
 
 knit("./01-data-filtering.Rmd")
-#source("./QuickFix_Cleaning.R")
-
 ```
 
-## Column
+
+
+## Top Panel: Counts of Repo, Papers, Claims Evaluated 
 
 ### Reproductions
 
-```{r number of reproductions}
-# No. of claims instead of no. of display items because some have all NA repro scores
-#reproductions <- length(unique(c(claims_df$reproduction_id, abandoned_df$reproduction_id))) 
+```{r no_repo}
 reproductions <- length(unique(tidy_all_repro_df$reproduction_id))
 
 valueBox(reproductions, icon = "fa-pencil")
@@ -49,7 +48,6 @@ valueBox(reproductions, icon = "fa-pencil")
 ### Papers
 
 ```{r number of papers}
-# papers <-  length(unique(c(claims_df$similar_title, abandoned_df$similar_title)))
 papers <-  length(unique(tidy_all_repro_df$doi))
 
 valueBox(papers, icon = "fa-file")
@@ -58,21 +56,16 @@ valueBox(papers, icon = "fa-file")
 ### Claims
 
 ```{r number of claims}
-#claims <- claims_df %>% 
-#                mutate("claim_id" = paste0(similar_title, claim_N)) %>% 
-#                summarise(length(unique(claim_id))) %>% 
-#                as.numeric
-
 claims <- di_cl_df %>%
-                select(reproduction_id, claim_N) %>%
-                unique() %>%
-                nrow()
+    select(reproduction_id, claim_N) %>%
+    unique() %>%
+    nrow()
 
 valueBox(claims, icon = "fa-comment")
 ```
 
 
-## Row {.tabset data-height="600"}
+## Row {.tabset data-height="600"} 
 
 ```{r histogram function}
 # This function takes a dataframe, groups it by a list of variables, applies a function to summarize the reproducibility (possibly weighted by a variable), and then iteratively ungroups until it produces a paper-level summary.
@@ -129,38 +122,18 @@ wrapper <- function(label, dev_width = dev.size("in")[1], dev_scaler = 18){
 }
 ```
 
-```{r}
-# main_hist <- paper_hist(dis_df, c("similar_title", "reproduction_id"), list(mean, mean)) +
-#     labs(title = "Distribution of Reproduction Scores: Paper Level",
-#              x = "Reproducibility Score",
-#              y = "Count")
-
-main_hist <- paper_hist(di_cl_df %>% filter(abandoned == 0), c("doi", "reproduction_id"), list(mean, mean)) +
+```{r Dist_Paper_Reproducibility}
+main_hist <- paper_hist(di_cl_df %>% filter(type == "FULL" | type == "MINIMUM"), c("doi", "reproduction_id"), list(mean, mean)) +
     labs(title = "Distribution of Reproduction Scores: Paper Level",
              x = "Reproducibility Score",
              y = "Count")
 
-main_hist_text <- ggparagraph("In this figure, the reproducibility score is calculated as a simple mean of reproducibility scores across display items reproduced, first within each reproduction attempt, and then, when applicable, across reproductions. This graph excludes cases whereby the reproduction attempts were abandoned, due to lack of materials required for computational reproduction (i.e. no data or code)", 
+main_hist_text <- ggparagraph("In this figure, reproducibility scores are calculated as follows. For full reproductions, where multiple display items (DI) were scored, we take a simple mean of scores across DIs within each reproduction. For minimum reproductions, where the paper was scored as a whole, we take the score as-is. When the same paper is evaluated by multiple reproductions, we take a simple average across reproductions. This graph excludes reproduction attempts that were abandoned due to lack of materials required for computational reproduction (i.e. no data or code)", 
                               face = 'plain', size = 8) + 
-                    theme(plot.margin = unit(c(t=10,r=0,b=0,l=0), "lines"))
+    theme(plot.margin = unit(c(t=10,r=0,b=0,l=0), "lines"))
 ```
 
-```{r}
-# abandoned_scores <- abandoned_df %>%
-#                     select(similar_title,reproduction_id) %>%
-#                     mutate(repro_score=1)
-# 
-# dis_aband <- rbind.data.frame(
-#                     select(dis_df,similar_title,reproduction_id,repro_score),
-#                     abandoned_scores)
-# 
-# abandoned_hist <- paper_hist(dis_aband,
-#                              c("similar_title","reproduction_id"),
-#                              list(mean,mean)) +
-#                               labs(title = "Distribution of Reproduction Scores: Paper Level",
-#                                        x = "Reproducibility Score",
-#                                        y = "Count")
-
+```{r Dist_Paper_Reproducibility_w_Abd}
 abandoned_hist <- paper_hist(di_cl_df,
                              c("doi","reproduction_id"),
                              list(mean,mean)) +
@@ -171,11 +144,10 @@ abandoned_hist <- paper_hist(di_cl_df,
 abandoned_hist_text <- ggparagraph("In this figure, the reproducibility score is calculated as a simple mean of reproducibility scores across display items reproduced, first within each reproduction attempt, and then, when applicable, across reproductions. In this graph, abandoned reproduction attempts (papers identified as not computationally reproducible) are assigned the lowest score of 1.", 
                               face = 'plain', size = 8) + 
                     theme(plot.margin = unit(c(t=11,r=0,b=0,l=0), "lines"))
-
 ```
 
-```{r}
-max_hist <- paper_hist(di_cl_df %>% filter(abandoned == 0), c("doi"), list(max)) +
+```{r Max_Within_Paper}
+max_hist <- paper_hist(di_cl_df %>% filter(type != "ABANDONED"), c("doi"), list(max)) +
                           labs(title = "Distribution of Maximum Reproduction Scores: Paper Level",
                                    x = "Reproducibility Score",
                                    y = "Count")
@@ -185,8 +157,8 @@ max_hist_text <- ggparagraph("In this figure, the reproducibility score is the m
                     theme(plot.margin = unit(c(t=15.5,r=0,b=0,l=0), "lines"))
 ```
 
-```{r}
-min_hist <- paper_hist(di_cl_df %>% filter(abandoned == 0), c("doi"), c(min))+
+```{r Min_Within_Paper}
+min_hist <- paper_hist(di_cl_df %>% filter(type != "ABANDONED"), c("doi"), c(min))+
                         labs(title = "Distribution of Minimum Reproduction Scores: Paper Level",
                                  x = "Reproducibility Score",
                                  y = "Count")
