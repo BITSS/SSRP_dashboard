@@ -29,6 +29,7 @@ library(viridisLite)
 library(highcharter)
 library(plotly)
 library(ggpubr)
+library(sf)
 
 knit("./01-data-filtering.Rmd")
 ```
@@ -224,7 +225,7 @@ For a more comprehensive description of the levels of computational reproducibil
 
 ```{r map,   fig_width = 15, fig_height = 7.6, fig_retina = 2}
 library(rnaturalearth)
-library(rgeos) # you may need devtools::install_version('rgeos', version = '0.6-4') to install this package
+library(sf) # you may need devtools::install_version('rgeos', version = '0.6-4') to install this package
 library(RColorBrewer)
 
 #get number of reproductions by country
